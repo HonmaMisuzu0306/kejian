@@ -1,0 +1,44 @@
+:root {
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #151817;
+  background: #e7e8e4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --font-ui: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  --surface-0: #e7e8e4;
+  --surface-1: #f4f4f0;
+  --surface-2: #d4d6d2;
+  --surface-elevated: #fafaf6;
+  --surface-dark: #151817;
+  --surface-black: #090b0a;
+  --text-primary: #151817;
+  --text-secondary: #555b57;
+  --text-muted: #747873;
+  --text-on-dark: #f5f5ef;
+  --signal-primary: #f1df00;
+  --signal-primary-deep: #cabb00;
+  --signal-success: #2e9672;
+  --signal-warning: #e98517;
+  --signal-danger: #d33b31;
+  --line-subtle: rgb(20 23 22 / 17%);
+  --line-active: rgb(20 23 22 / 62%);
+  --line-light: rgb(255 255 255 / 28%);
+  --grid-color: rgb(20 23 22 / 6%);
+  --panel-cut: 14px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --duration-fast: 120ms;
+  --duration-normal: 220ms;
+  --shadow-panel: 0 15px 40px rgb(10 13 11 / 10%);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}

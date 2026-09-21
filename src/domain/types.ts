@@ -1,0 +1,57 @@
+export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7
+export type CourseMeeting = {
+  weekday: Weekday
+  startSection: number
+  endSection: number
+  weeks: number[]
+}
+export type ImportSource = {
+  kind: 'screenshot-demo'
+  batchId: string
+  imageNames: string[]
+}
+export type Course = {
+  id: string
+  semesterId: string
+  name: string
+  teacher?: string
+  location?: string
+  color: string
+  meetings: CourseMeeting[]
+  source?: ImportSource
+  createdAt: string
+  updatedAt: string
+}
+export type Semester = {
+  id: string
+  name: string
+  startDate: string
+  totalWeeks: number
+}
+export type ImportBatch = {
+  id: string
+  createdAt: string
+  imageNames: string[]
+  importedCourseIds: string[]
+  changes: { before: Course | null; after: Course }[]
+  undoneAt?: string
+}
+export type AppState = {
+  version: 1
+  semesters: Semester[]
+  activeSemesterId: string
+  courses: Course[]
+  batches: ImportBatch[]
+}
+export type RecognitionResult = {
+  courses: Course[]
+  warnings: string[]
+  mode: 'demo'
+}
+export interface TimetableImageRecognizer {
+  recognize(input: {
+    image: File
+    semesterId: string
+    weekNumber: number
+  }): Promise<RecognitionResult>
+}

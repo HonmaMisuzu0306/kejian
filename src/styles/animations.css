@@ -1,0 +1,50 @@
+@keyframes statusPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(241 223 0 / 0%);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgb(241 223 0 / 16%);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes terminalIn {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.main-shell > main > :not(dialog) {
+  animation: terminalIn var(--duration-normal) ease-out both;
+}
+
+.sheet,
+.confirm-dialog {
+  animation: none;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

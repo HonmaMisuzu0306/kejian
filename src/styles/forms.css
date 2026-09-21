@@ -1,0 +1,150 @@
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.form-grid.thirds {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.section-heading {
+  min-height: 54px;
+  margin: 23px 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line-active);
+}
+
+.section-heading h2,
+.section-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-heading > span,
+.field-help {
+  color: var(--text-muted);
+  font: 9px/1.6 var(--font-mono);
+}
+
+.field-help {
+  margin-top: 6px;
+}
+
+.field-error {
+  margin-top: 7px;
+  color: var(--signal-danger);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.required {
+  color: var(--signal-danger);
+}
+
+.sheet {
+  width: min(660px, calc(100% - 40px));
+  max-height: min(860px, calc(100dvh - 40px));
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--surface-black);
+  border-top: 6px solid var(--signal-primary);
+  border-radius: 0;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  box-shadow: 0 28px 100px #0008;
+}
+
+.sheet::backdrop {
+  background: rgb(9 11 10 / 78%);
+  backdrop-filter: blur(3px);
+}
+
+.sheet form {
+  padding: 26px;
+  display: grid;
+  gap: 17px;
+}
+
+.sheet-heading {
+  margin-bottom: 3px;
+  padding-bottom: 17px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line-active);
+}
+
+.sheet-heading h2 {
+  font-size: 25px;
+}
+
+.sheet .section-heading {
+  margin: 10px 0 0;
+}
+
+.meeting-fields {
+  margin: 0;
+  padding: 17px;
+  border: 1px solid var(--line-active);
+  background: var(--surface-elevated);
+}
+
+.meeting-fields legend {
+  padding: 3px 9px;
+  background: var(--surface-dark);
+  color: var(--text-on-dark);
+  font: 9px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.meeting-fields > label {
+  margin-top: 13px;
+}
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.color-swatch {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--surface-elevated);
+  outline: 1px solid var(--line-active);
+}
+
+.color-swatch.selected::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #0008;
+}
+
+.sheet-footer {
+  margin: 4px -26px -26px;
+  padding: 17px 26px calc(17px + var(--safe-bottom));
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line-active);
+  background: var(--surface-1);
+}
+
+.sheet-footer .primary {
+  min-height: 50px;
+}
+
+.notice[role='alert'] .icon-button {
+  position: absolute;
+  right: 3px;
+  top: 2px;
+}
