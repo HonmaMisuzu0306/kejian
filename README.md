@@ -1,8 +1,8 @@
 # 课间 · 手机课表
 
-手机优先的本地 PWA：上传课表截图、校对课程草稿、保存周课表，并在日程时间轴中安排个人时间。React + TypeScript + Vite，无后端和账号系统。当前已完成课表闭环、工业视觉升级和个人日程第一版。
+手机优先的本地 PWA：上传课表截图、校对课程草稿、保存周课表，并在日程时间轴中安排个人时间。React + TypeScript + Vite，无后端和账号系统。当前已完成课表闭环、工业视觉升级、个人日程和南信大课表截图实验识别。
 
-**当前是演示识别，不是真实 OCR。任意图片都会返回同一份参考课程数据，只使用你选择的学期和周次。** 所有课程信息都应在导入前人工确认。截图不会上传或持久保存，也不会读取教务系统账号、密码或 Cookie。
+**V1.0.1 的截图扫描是实验功能，目前只适配南信大移动教务系统的完整竖屏周课表。** 它会在设备本地读取图片、检测课程色块并执行中文 OCR，但小字可能出现错字，所有课程信息都必须在导入前人工确认。截图不会上传或持久保存，也不会读取教务系统账号、密码或 Cookie。
 
 ## 在电脑上启动
 
@@ -38,7 +38,7 @@ npm run preview -- --port 4173 --strictPort
 
 ## Android APK
 
-项目已经接入 Capacitor 8，Android 应用标识为 `com.honmamisuzu.kejian`，支持 Android 7.0（API 24）及以上版本。正式签名 APK 可从 [GitHub Releases](https://github.com/HonmaMisuzu0306/kejian/releases/tag/v1.0.0) 下载。
+项目已经接入 Capacitor 8，Android 应用标识为 `com.honmamisuzu.kejian`，支持 Android 7.0（API 24）及以上版本。正式签名 APK 可从 [GitHub Releases](https://github.com/HonmaMisuzu0306/kejian/releases) 下载。`v1.0.0` 是首个正式版，`v1.0.1` 是包含本地截图扫描的实验性预发布。
 
 在本机生成调试测试包：
 
@@ -47,17 +47,17 @@ cd C:\class_desktop
 npm run android:apk
 ```
 
-构建脚本会依次完成网页生产构建、Capacitor 同步、原生图标和启动画面生成、Android 编译，并把结果复制到 `artifacts/kejian-v1.0.0-test.apk`。本机重新构建需要 Java 21 和包含 API 36 的 Android SDK；也可以通过 `npm run android:open` 在 Android Studio 打开原生工程。
+构建脚本会依次完成网页生产构建、OCR 离线资源同步、Capacitor 同步、原生图标和启动画面生成、Android 编译，并按 `package.json` 版本号复制 APK。V1.0.1 调试包为 `artifacts/kejian-v1.0.1-test.apk`。本机重新构建需要 Java 21 和包含 API 36 的 Android SDK；也可以通过 `npm run android:open` 在 Android Studio 打开原生工程。
 
 仓库维护者可通过 `npm run android:release` 使用本地保存且未提交到仓库的正式密钥构建发布包。手机首次侧载时需要允许文件管理器或浏览器“安装未知应用”。APK 与浏览器/PWA 使用不同的应用存储空间，因此浏览器中已有的课程不会自动进入 APK；首次打开 APK 后需要重新设置或导入。
 
-正式版和早期调试测试包使用不同签名。如果手机已经安装 `kejian-v1.0.0-test.apk`，请先卸载测试包，再安装正式版 `kejian-v1.0.0.apk`。
+正式版和调试测试包使用不同签名。如果手机已经安装文件名带 `-test` 的调试包，请先卸载调试包，再安装正式版；从 GitHub 安装的 `v1.0.0` 正式版可直接升级到 `v1.0.1`。
 
 ## 使用流程
 
 1. 首次设置学期名称、第一周周一日期和总周数。默认日期 `2026-08-31` 根据参考截图推算，应按学校校历核实。
-2. 在“导入”选择 PNG、JPG 或 WebP 截图，每张不超过 15 MB，每批最多 12 张。
-3. 为每张图片确认学期、周次，生成演示草稿。需要时可展开“查看原图与识别提示”。
+2. 在“导入”选择南信大移动教务系统的完整竖屏周课表截图；支持 PNG、JPG 或 WebP，每张不超过 15 MB，每批最多 12 张。
+3. 为每张图片确认学期、周次，启动本地 OCR 并生成实验识别草稿。需要时可展开“查看原图与识别提示”。首次识别会加载随应用打包的约 14 MB 离线资源，手机处理可能需要数十秒。
 4. 编辑、添加或删除课程，核对教室、教师、节次和周次。周次支持 `1,3,5-8`，不会推断未提供截图的周。
 5. 时间冲突会提示；需要明确勾选保留重叠安排才允许导入。
 6. 确认导入后查看周课表，点击课程可继续修改；左右滑动或点击箭头切换教学周。
@@ -95,8 +95,8 @@ npm run android:apk
 - 清除浏览器数据会失去记录，建议在“设置”导出 JSON 备份。第一阶段提供导出，尚无备份恢复界面。
 - 图片仅保留在当前导入页面的内存中，离开页面后释放；未确认草稿离开页面后不会保留。
 - 周课表使用每个教学周的课程规则，不预生成整个学期的大量事件。
-- 当前尚未支持真实 OCR、重复日程规则、系统通知、日程文件导入、云同步、学校登录或校历自动调休。
-- 参考截图中周一 5–6 节的“日语（一）”归属不明确，演示数据保留提示，需要手动补充核对。
+- 当前 OCR 只支持已适配的南信大竖屏周课表；其他学校、横屏、裁切截图和明显不同的页面主题会被拒绝或产生不可靠结果。
+- 当前尚未支持通用教务系统识别、重复日程规则、系统通知、日程文件导入、云同步、学校登录或校历自动调休。
 - 浏览器测试为 Edge 下的手机尺寸模拟；未宣称已在真实 iPhone Safari 或 Android 设备完成测试。
 
 ## 验证命令
@@ -111,7 +111,7 @@ npm run check          # 格式、类型、单元测试、构建
 npm run test:e2e       # 正式构建后的浏览器流程验证
 ```
 
-浏览器测试使用已安装的 Microsoft Edge，需先构建。默认用项目内 PNG 测试文件选择，因为演示识别器不依赖图片内容。可以用真实截图验证上传路径：
+浏览器测试使用已安装的 Microsoft Edge，需先构建。测试会生成一张不含用户数据的南信大版式合成课表，并执行真正的本地 OCR；也可以用真实截图验证完整路径：
 
 ```powershell
 $env:TIMETABLE_SCREENSHOT = 'C:\你的目录\课表.jpg'
@@ -138,7 +138,8 @@ npm run test:e2e
 | `src/domain/layout.ts`                | 重叠课程分栏                     |
 | `src/domain/events.ts`                | 日程校验、冲突、排序与分栏       |
 | `src/services/storage.ts`             | 持久化与加载校验                 |
-| `src/services/recognizer.ts`          | 可替换的演示识别适配器           |
+| `src/services/recognizer.ts`          | 本地 OCR 识别器与图片处理        |
+| `src/services/recognizers/`           | 南信大版式检测、解析和测试       |
 | `vite.config.ts`                      | 构建、PWA、单元测试配置          |
 | `tests/app.spec.ts`                   | 浏览器端验收流程                 |
 | `docs/PHASE_3_SCHEDULE_PROMPT.md`     | 本阶段完整开发 Prompt            |
@@ -146,10 +147,10 @@ npm run test:e2e
 | `scripts/build-android-apk.ps1`       | Windows 一键 APK 构建            |
 | `scripts/generate-android-assets.mjs` | 原生图标与启动画面生成           |
 
-## 第二阶段：接入真实截图识别
+## 当前截图识别实现
 
-实现 `TimetableImageRecognizer`，保持输入为 `File + semesterId + weekNumber`，输出为课程草稿和警告。适配器放在 `src/services/`，替换导入页的识别器依赖，不修改课程存储与合并规则。
+识别器保持 `TimetableImageRecognizer` 接口，输入为 `File + semesterId + weekNumber`，输出课程草稿和警告。南信大适配器先按固定网格检测七个星期列与 11 节课，合并同色连续课程块，再使用 Tesseract.js 简体中文模型逐块识别课程名和教室。
 
-建议先针对学校固定课表布局，检测星期列与节次行、合并色块和连续节数，再进行中文 OCR。逐条保留低置信度/缺失字段警告，继续使用现有人工校对流程；周次必须由截图证据或用户确认提供。
+OCR worker、三种兼容核心和中文语言文件由 `scripts/sync-ocr-assets.mjs` 从锁定的 npm 依赖复制进构建，PWA Service Worker 和 APK 均包含这些文件，不需要远程 CDN。逐条保留低置信度和缺失字段警告，继续使用现有人工校对流程；周次必须由用户确认。
 
-选型时用实际截图评估中文小字、跨行课程名、教室、同格多门课程的识别率和手机耗时。浏览器本地 OCR 能保持图片不离开设备；如选择远程识别，应在上传前明确告知用户并取得同意，服务端保管密钥，不能将密钥打包进前端。第一阶段尚未选择或调用任何外部识别服务。
+后续新增学校时，应在 `src/services/recognizers/` 增加版式适配器，共用 OCR 和现有校对流程。若未来选择远程识别，应在上传前明确告知用户并取得同意，服务端保管密钥，不能将密钥打包进前端；V1.0.1 没有调用外部识别服务。

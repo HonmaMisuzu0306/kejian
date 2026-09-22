@@ -1,6 +1,8 @@
 node_modules/
 dist/
 test-results/
+tests/.generated/
+public/ocr/
 playwright-report/
 coverage/
 artifacts/*.apk

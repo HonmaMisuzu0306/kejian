@@ -217,7 +217,7 @@ export function Settings({
               HTTPS。
             </p>
           </section>
-          <p className="quiet-note">课间 v1.0.0 · 校园时间管理终端</p>
+          <p className="quiet-note">课间 v1.0.1 · 课表扫描实验版</p>
         </>
       )}
     </>

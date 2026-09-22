@@ -6,7 +6,7 @@ export type CourseMeeting = {
   weeks: number[]
 }
 export type ImportSource = {
-  kind: 'screenshot-demo'
+  kind: 'screenshot-demo' | 'screenshot-local-ocr'
   batchId: string
   imageNames: string[]
 }
@@ -59,12 +59,13 @@ export type AppState = {
 export type RecognitionResult = {
   courses: Course[]
   warnings: string[]
-  mode: 'demo'
+  mode: 'demo' | 'local-ocr'
 }
 export interface TimetableImageRecognizer {
   recognize(input: {
     image: File
     semesterId: string
     weekNumber: number
+    onProgress?: (progress: number, label: string) => void
   }): Promise<RecognitionResult>
 }

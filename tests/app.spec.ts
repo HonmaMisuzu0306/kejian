@@ -4,7 +4,7 @@ import path from 'node:path'
 
 const screenshot =
   process.env.TIMETABLE_SCREENSHOT ??
-  path.join(process.cwd(), 'public', 'icon-192.png')
+  path.join(process.cwd(), 'tests', '.generated', 'nuist-synthetic.png')
 async function setup(page: Page) {
   await page.clock.install({ time: new Date('2026-09-14T07:30:00+08:00') })
   await page.goto('/')
@@ -21,8 +21,10 @@ async function generate(page: Page, week = 3) {
   await tab(page, '导入')
   await page.getByTestId('screenshot-input').setInputFiles(screenshot)
   await page.getByRole('spinbutton', { name: '截图1周次' }).fill(String(week))
-  await page.getByRole('button', { name: '生成演示识别草稿' }).click()
-  await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible()
+  await page.getByRole('button', { name: '开始本地识别' }).click()
+  await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible({
+    timeout: 120_000,
+  })
 }
 
 test('390px 截图导入、增删改、保存、刷新、重复导入及撤销完整流程', async ({
@@ -33,20 +35,16 @@ test('390px 截图导入、增删改、保存、刷新、重复导入及撤销�
   await setup(page)
   await expect(page.getByText('今天没有课程或个人日程')).toBeVisible()
   await generate(page)
-  await expect(
-    page.getByText('演示数据 · 未执行真实 OCR。', { exact: false }),
-  ).toBeVisible()
+  await expect(page.getByText('实验性本地 OCR', { exact: false })).toBeVisible()
   await page.screenshot({ path: 'test-results/mobile-drafts.png' })
-  await page
-    .getByRole('button', { name: '编辑电子技术基础', exact: true })
-    .click()
+  const recognizedCount = await page.locator('.draft-card').count()
+  expect(recognizedCount).toBeGreaterThan(0)
+  await page.locator('.draft-card .draft-main').first().click()
   await page.screenshot({ path: 'test-results/mobile-editor.png' })
   await page.getByLabel('课程名称').fill('电子技术基础（已校对）')
   await page.getByLabel('教师', { exact: true }).fill('测试教师')
   await page.getByRole('button', { name: '保存课程', exact: true }).click()
-  await page
-    .getByRole('button', { name: '删除草稿学术英语（1）', exact: true })
-    .click()
+  await page.locator('.draft-card .icon-button.danger').nth(1).click()
   await page.getByRole('button', { name: '添加', exact: true }).click()
   await page.getByLabel('课程名称').fill('自习')
   await page.getByLabel('安排1星期').selectOption('6')
@@ -99,14 +97,17 @@ test('390px 截图导入、增删改、保存、刷新、重复导入及撤销�
   await page.getByRole('button', { name: /确认导入/ }).click()
   await page.getByRole('button', { name: '继续导入其他周' }).click()
   await page.getByTestId('screenshot-input').setInputFiles(screenshot)
-  await page.getByRole('button', { name: '生成演示识别草稿' }).click()
+  await page.getByRole('button', { name: '开始本地识别' }).click()
+  await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible({
+    timeout: 120_000,
+  })
   await page.getByRole('button', { name: /确认导入/ }).click()
   await expect(
-    page.getByText('新增 0 门 · 更新 0 门 · 跳过 9 门重复课程'),
+    page.getByText(/新增 0 门 · 更新 0 门 · 跳过 \d+ 门重复课程/),
   ).toBeVisible()
   await tab(page, '设置')
   await expect(
-    page.getByText(/保存了 9 门课程、0 条个人日程和 2 条导入记录/),
+    page.getByText(/保存了 \d+ 门课程、0 条个人日程和 2 条导入记录/),
   ).toBeVisible()
   expect(errors).toEqual([])
 })
@@ -118,8 +119,11 @@ test('多周合并、冲突提醒、周次校验、保留导入后的编辑', as
     .getByTestId('screenshot-input')
     .setInputFiles([screenshot, screenshot])
   await page.getByRole('spinbutton', { name: '截图2周次' }).fill('5')
-  await page.getByRole('button', { name: '生成演示识别草稿' }).click()
-  await expect(page.getByText('周一 · 3–4节 · 第3,5周')).toBeVisible()
+  await page.getByRole('button', { name: '开始本地识别' }).click()
+  await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible({
+    timeout: 120_000,
+  })
+  await expect(page.locator('.draft-card').first()).toContainText('第3,5周')
   await page.getByRole('button', { name: '添加', exact: true }).click()
   await page.getByLabel('课程名称').fill('重叠测试')
   await page.getByLabel('安排1开始节次').selectOption('3')
@@ -199,7 +203,10 @@ test('HTTP 兼容模式与两周短学期可完成导入', async ({ page }) => {
     '2',
   )
   await page.screenshot({ path: 'test-results/mobile-upload.png' })
-  await page.getByRole('button', { name: '生成演示识别草稿' }).click()
+  await page.getByRole('button', { name: '开始本地识别' }).click()
+  await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible({
+    timeout: 120_000,
+  })
   await page.getByRole('button', { name: /确认导入/ }).click()
   await expect(page.getByText('新安排，已就位。')).toBeVisible()
 })
@@ -219,16 +226,14 @@ test('导入其他学期后打开正确的学期和周次', async ({ page }) => 
   await page.getByTestId('screenshot-input').setInputFiles(screenshot)
   await page.getByLabel('截图1学期').selectOption(originalSemester)
   await page.getByRole('spinbutton', { name: '截图1周次' }).fill('5')
-  await page.getByRole('button', { name: '生成演示识别草稿' }).click()
+  await page.getByRole('button', { name: '开始本地识别' }).click()
+  await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible({
+    timeout: 120_000,
+  })
   await page.getByRole('button', { name: /确认导入/ }).click()
   await page.getByRole('button', { name: '查看导入周课表' }).click()
   await expect(page.locator('.week-switch')).toContainText('WEEK_05')
-  await expect(
-    page.getByRole('button', {
-      name: '电子技术基础 周一 第3到4节',
-      exact: true,
-    }),
-  ).toBeVisible()
+  await expect(page.locator('.grid-course').first()).toBeVisible()
 })
 
 test('工业视觉在关键宽度、长课程名、编辑器和减少动效模式下保持可用', async ({
@@ -236,9 +241,7 @@ test('工业视觉在关键宽度、长课程名、编辑器和减少动效模�
 }) => {
   await setup(page)
   await generate(page)
-  await page
-    .getByRole('button', { name: '编辑电子技术基础', exact: true })
-    .click()
+  await page.locator('.draft-card .draft-main').first().click()
   await page
     .getByLabel('课程名称')
     .fill('电子技术基础与智能系统综合实践课程超长名称校对样本')

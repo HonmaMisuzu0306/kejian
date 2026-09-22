@@ -23,7 +23,7 @@ import {
   newCourse,
 } from '../domain/courses'
 import { formatWeeks, weekdays } from '../domain/calendar'
-import { demoRecognizer } from '../services/recognizer'
+import { nuistScreenshotRecognizer } from '../services/recognizer'
 import type { AppState, Course } from '../domain/types'
 
 type SelectedImage = {
@@ -50,6 +50,10 @@ export function ImportPage({
   const [warnings, setWarnings] = useState<string[]>([])
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [busy, setBusy] = useState(false)
+  const [recognitionProgress, setRecognitionProgress] = useState({
+    value: 0,
+    label: '',
+  })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [editing, setEditing] = useState<Course | null>(null)
@@ -113,6 +117,7 @@ export function ImportPage({
   async function recognize() {
     setBusy(true)
     setError('')
+    setRecognitionProgress({ value: 0, label: '准备本地识别' })
     try {
       for (const image of images) {
         const semester = state.semesters.find((s) => s.id === image.semesterId)
@@ -124,15 +129,23 @@ export function ImportPage({
         )
           throw new Error('请为每张截图填写有效周次。')
       }
-      const results = await Promise.all(
-        images.map((image) =>
-          demoRecognizer.recognize({
+      const results = []
+      for (let index = 0; index < images.length; index++) {
+        const image = images[index]
+        results.push(
+          await nuistScreenshotRecognizer.recognize({
             image: image.file,
             semesterId: image.semesterId,
             weekNumber: image.week,
+            onProgress(value, label) {
+              setRecognitionProgress({
+                value: (index + value) / images.length,
+                label: `图片 ${index + 1}/${images.length} · ${label}`,
+              })
+            },
           }),
-        ),
-      )
+        )
+      }
       if (!alive.current) return
       setDrafts(
         mergeCourses(
@@ -145,7 +158,10 @@ export function ImportPage({
     } catch (err) {
       if (alive.current) setError((err as Error).message)
     } finally {
-      if (alive.current) setBusy(false)
+      if (alive.current) {
+        setBusy(false)
+        setRecognitionProgress({ value: 0, label: '' })
+      }
     }
   }
   const errors = drafts.flatMap((c) =>
@@ -226,9 +242,9 @@ export function ImportPage({
           <div className="notice demo-notice">
             <ScanLine size={21} />
             <div>
-              <strong>第一阶段 · 演示识别</strong>
+              <strong>V1.0.1 · 实验性本地识别</strong>
               <p>
-                目前不会读取图片内容。任意截图都会生成参考课表的演示草稿，请逐项校对后再保存。
+                当前适配南信大移动教务系统的竖屏周课表。图片只在本机处理，中文小字仍可能识别错误，请逐项校对。
               </p>
             </div>
           </div>
@@ -359,15 +375,31 @@ export function ImportPage({
                 {busy ? (
                   <>
                     <LoaderCircle size={18} className="spin" />
-                    正在生成草稿…
+                    {recognitionProgress.label || '正在识别截图…'}
                   </>
                 ) : (
                   <>
-                    生成演示识别草稿
+                    开始本地识别
                     <ArrowRight size={18} />
                   </>
                 )}
               </button>
+              {busy && (
+                <div
+                  className="recognition-progress"
+                  role="progressbar"
+                  aria-label={recognitionProgress.label}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(recognitionProgress.value * 100)}
+                >
+                  <span
+                    style={{
+                      width: `${Math.round(recognitionProgress.value * 100)}%`,
+                    }}
+                  />
+                </div>
+              )}
             </>
           )}
           <div className="tips-card">
@@ -378,7 +410,9 @@ export function ImportPage({
             <p>
               保留顶部周次、星期和左侧节次；截图尽量清晰完整。不同周的截图可一起导入，相同课程会自动合并。
             </p>
-            <p>一张截图只代表一周，其他周需要补充截图或手动设置。</p>
+            <p>
+              请使用完整竖屏周视图，不要裁掉星期栏和左侧节次。一张截图只代表一周，其他周需要补充截图或手动设置。
+            </p>
           </div>
         </>
       )}
@@ -425,7 +459,8 @@ export function ImportPage({
             ))}
           </details>
           <div className="notice warning">
-            演示数据 · 未执行真实 OCR。教师未识别，地点及重叠课程需要人工确认。
+            实验性本地 OCR ·
+            星期和节次来自课表网格，课程名、教室及重叠课程必须人工确认。
           </div>
           <div className="draft-list">
             {drafts.map((c) => (

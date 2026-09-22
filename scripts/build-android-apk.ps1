@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $androidRoot = Join-Path $projectRoot 'android'
+$packageVersion = (Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Raw | ConvertFrom-Json).version
 
 function Test-Java21([string]$candidate) {
   if (-not $candidate) { return $false }
@@ -83,7 +84,7 @@ try {
     Join-Path $androidRoot 'app\build\outputs\apk\debug\app-debug.apk'
   }
   $artifactDirectory = Join-Path $projectRoot 'artifacts'
-  $artifactName = if ($Configuration -eq 'Release') { 'kejian-v1.0.0.apk' } else { 'kejian-v1.0.0-test.apk' }
+  $artifactName = if ($Configuration -eq 'Release') { "kejian-v$packageVersion.apk" } else { "kejian-v$packageVersion-test.apk" }
   $artifactApk = Join-Path $artifactDirectory $artifactName
   New-Item -ItemType Directory -Force -Path $artifactDirectory | Out-Null
   Copy-Item -LiteralPath $sourceApk -Destination $artifactApk -Force

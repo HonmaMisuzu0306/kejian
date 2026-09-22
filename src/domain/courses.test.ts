@@ -57,6 +57,12 @@ describe('合并与冲突检测', () => {
       ),
     ).toHaveLength(4)
   })
+  it('OCR 未识别出名称的课程块保持独立，等待逐条校对', () => {
+    const monday = course([3], { name: '' })
+    const tuesday = course([3], { name: '' })
+    tuesday.meetings[0].weekday = 2
+    expect(mergeCourses([], [monday, tuesday])).toHaveLength(2)
+  })
   it('仅重叠周、日、节次产生冲突', () => {
     const a = course()
     const b = course([3], { name: '数学' })

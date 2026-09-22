@@ -750,6 +750,19 @@
   margin-top: 3px;
   font-size: 10px;
 }
+.recognition-progress {
+  height: 5px;
+  margin-top: -0.55rem;
+  overflow: hidden;
+  background: var(--surface-panel);
+  border: 1px solid var(--line-dark);
+}
+.recognition-progress span {
+  display: block;
+  height: 100%;
+  background: var(--signal-primary);
+  transition: width 180ms ease;
+}
 .upload-area {
   position: relative;
   width: 100%;

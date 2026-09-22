@@ -46,7 +46,9 @@ export function mergeCourses(existing: Course[], incoming: Course[]): Course[] {
     course.name = clean(course.name)
     course.location = clean(course.location)
     course.teacher = clean(course.teacher)
-    const found = result.find((c) => identity(c) === identity(course))
+    const found = course.name
+      ? result.find((c) => identity(c) === identity(course))
+      : undefined
     if (!found) {
       course.meetings = normalizeMeetings(course.meetings)
       result.push(course)
@@ -135,6 +137,8 @@ export function importCourses(
   state: AppState,
   drafts: Course[],
   imageNames: string[],
+  sourceKind:
+    'screenshot-demo' | 'screenshot-local-ocr' = 'screenshot-local-ocr',
 ): { state: AppState; added: number; updated: number; skipped: number } {
   for (const course of drafts) {
     const semester = state.semesters.find((s) => s.id === course.semesterId)
@@ -142,7 +146,7 @@ export function importCourses(
       throw new Error('请先修正课程中的错误')
   }
   const batchId = createId()
-  const source = { kind: 'screenshot-demo' as const, batchId, imageNames }
+  const source = { kind: sourceKind, batchId, imageNames }
   const merged = mergeCourses(
     state.courses,
     drafts.map((c) => ({ ...c, source })),
