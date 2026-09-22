@@ -52,6 +52,9 @@ export function isMonday(date: string): boolean {
 export function weekdayOf(date: string): number {
   return new Date(dayIndex(date) * DAY).getUTCDay() || 7
 }
+export function shiftDate(date: string, days: number): string {
+  return new Date((dayIndex(date) + days) * DAY).toISOString().slice(0, 10)
+}
 export function parseWeeks(input: string, max: number): number[] {
   if (!input.trim()) throw new Error('请填写上课周次')
   const result = new Set<number>()

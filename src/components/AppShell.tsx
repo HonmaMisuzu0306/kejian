@@ -1,10 +1,16 @@
 import type { ComponentType, ReactNode } from 'react'
-import { CalendarDays, Home, Settings2, Upload } from 'lucide-react'
+import {
+  CalendarClock,
+  CalendarDays,
+  Home,
+  Settings2,
+  Upload,
+} from 'lucide-react'
 import { BrandSymbol } from './BrandSymbol'
 import { StatusBadge } from './DesignSystem'
 import type { Semester } from '../domain/types'
 
-export type PageId = 'home' | 'week' | 'import' | 'settings'
+export type PageId = 'home' | 'week' | 'agenda' | 'import' | 'settings'
 const tabs: {
   id: PageId
   label: string
@@ -13,8 +19,9 @@ const tabs: {
 }[] = [
   { id: 'home', label: '今日', code: '01', Icon: Home },
   { id: 'week', label: '课表', code: '02', Icon: CalendarDays },
-  { id: 'import', label: '导入', code: '03', Icon: Upload },
-  { id: 'settings', label: '设置', code: '04', Icon: Settings2 },
+  { id: 'agenda', label: '日程', code: '03', Icon: CalendarClock },
+  { id: 'import', label: '导入', code: '04', Icon: Upload },
+  { id: 'settings', label: '设置', code: '05', Icon: Settings2 },
 ]
 
 export function AppShell({
@@ -99,7 +106,7 @@ export function AppShell({
         <main>{children}</main>
         <footer className="desktop-footer">
           <span>KEJIAN CAMPUS TIME SYSTEM</span>
-          <span>PHASE 02 / VISUAL SYSTEM</span>
+          <span>PHASE 03 / PERSONAL AGENDA</span>
         </footer>
       </div>
       <nav className="bottom-nav" aria-label="手机主导航">

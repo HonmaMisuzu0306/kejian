@@ -31,7 +31,7 @@ test('390px 截图导入、增删改、保存、刷新、重复导入及撤销�
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(e.message))
   await setup(page)
-  await expect(page.getByText('今天没有课程安排')).toBeVisible()
+  await expect(page.getByText('今天没有课程或个人日程')).toBeVisible()
   await generate(page)
   await expect(
     page.getByText('演示数据 · 未执行真实 OCR。', { exact: false }),
@@ -105,7 +105,9 @@ test('390px 截图导入、增删改、保存、刷新、重复导入及撤销�
     page.getByText('新增 0 门 · 更新 0 门 · 跳过 9 门重复课程'),
   ).toBeVisible()
   await tab(page, '设置')
-  await expect(page.getByText(/保存了 9 门课程和 2 条导入记录/)).toBeVisible()
+  await expect(
+    page.getByText(/保存了 9 门课程、0 条个人日程和 2 条导入记录/),
+  ).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -291,4 +293,74 @@ test('工业视觉在关键宽度、长课程名、编辑器和减少动效模�
     .locator('.page-heading')
     .evaluate((element) => getComputedStyle(element).animationDuration)
   expect(parseFloat(animationDuration)).toBeLessThan(1)
+})
+
+test('个人日程可创建、编辑、刷新保留并删除', async ({ page }) => {
+  await setup(page)
+  await tab(page, '日程')
+  await expect(page.getByRole('heading', { name: '日程时间轴' })).toBeVisible()
+  await page.getByRole('button', { name: '在 09:30 创建日程' }).click()
+  await page.getByLabel('日程标题').fill('图书馆自习')
+  await page.getByLabel('结束时间').fill('10:45')
+  await page.getByLabel('地点', { exact: true }).fill('图书馆三楼')
+  await page.getByLabel('备注').fill('复习数据结构')
+  await page.getByRole('button', { name: '保存日程', exact: true }).click()
+  await expect(
+    page.getByRole('button', {
+      name: '日程 图书馆自习 09:30到10:45',
+      exact: true,
+    }),
+  ).toBeVisible()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
+  await page.screenshot({
+    path: 'test-results/mobile-agenda.png',
+    fullPage: true,
+  })
+
+  await page.reload()
+  await tab(page, '日程')
+  await page
+    .getByRole('button', {
+      name: '日程 图书馆自习 09:30到10:45',
+      exact: true,
+    })
+    .click()
+  await page.getByLabel('日程标题').fill('图书馆自习（已调整）')
+  await page.getByRole('button', { name: '保存日程', exact: true }).click()
+  await tab(page, '今日')
+  await expect(
+    page
+      .getByRole('button', { name: '09:30 10:45' })
+      .getByRole('heading', { name: '图书馆自习（已调整）' }),
+  ).toBeVisible()
+  await tab(page, '日程')
+
+  await page.setViewportSize({ width: 1440, height: 960 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
+  await page.screenshot({
+    path: 'test-results/desktop-agenda.png',
+    fullPage: true,
+  })
+  await page
+    .getByRole('button', {
+      name: '日程 图书馆自习（已调整） 09:30到10:45',
+      exact: true,
+    })
+    .click()
+  await page.getByRole('button', { name: '删除日程', exact: true }).click()
+  await page.getByRole('button', { name: '确认删除', exact: true }).click()
+  await expect(
+    page.getByRole('button', {
+      name: '日程 图书馆自习（已调整） 09:30到10:45',
+      exact: true,
+    }),
+  ).toHaveCount(0)
 })

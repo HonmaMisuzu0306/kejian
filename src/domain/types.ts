@@ -36,12 +36,25 @@ export type ImportBatch = {
   changes: { before: Course | null; after: Course }[]
   undoneAt?: string
 }
+export type ScheduleEvent = {
+  id: string
+  title: string
+  date: string
+  startTime: string
+  endTime: string
+  location?: string
+  notes?: string
+  color: string
+  createdAt: string
+  updatedAt: string
+}
 export type AppState = {
-  version: 1
+  version: 2
   semesters: Semester[]
   activeSemesterId: string
   courses: Course[]
   batches: ImportBatch[]
+  events: ScheduleEvent[]
 }
 export type RecognitionResult = {
   courses: Course[]

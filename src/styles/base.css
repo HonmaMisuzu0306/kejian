@@ -23,13 +23,15 @@ body::before {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button,
 a,
 input,
-select {
+select,
+textarea {
   -webkit-tap-highlight-color: transparent;
 }
 button {
@@ -45,6 +47,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 summary:focus-visible {
   outline: 3px solid var(--signal-primary);
   outline-offset: 3px;
@@ -85,7 +88,8 @@ label {
   line-height: 1.7;
 }
 input,
-select {
+select,
+textarea {
   width: 100%;
   min-width: 0;
   min-height: 46px;
@@ -97,8 +101,13 @@ select {
   color: var(--text-primary);
   outline: none;
 }
+textarea {
+  resize: vertical;
+  line-height: 1.65;
+}
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--surface-black);
   box-shadow: inset 4px 0 var(--signal-primary);
 }

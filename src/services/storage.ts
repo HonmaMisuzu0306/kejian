@@ -1,25 +1,35 @@
 import { courseErrors } from '../domain/courses'
 import { isMonday } from '../domain/calendar'
-import type { AppState, Semester } from '../domain/types'
+import { eventErrors } from '../domain/events'
+import type { AppState, ScheduleEvent, Semester } from '../domain/types'
 
 export const STORAGE_KEY = 'kejian.app.v1'
 export const emptyState = (): AppState => ({
-  version: 1,
+  version: 2,
   semesters: [],
   activeSemesterId: '',
   courses: [],
   batches: [],
+  events: [],
 })
 export function validateState(value: unknown): AppState {
-  const s = value as AppState
+  const input = value as Partial<AppState> & { version?: number }
   if (
-    !s ||
-    s.version !== 1 ||
-    !Array.isArray(s.semesters) ||
-    !Array.isArray(s.courses) ||
-    !Array.isArray(s.batches)
+    !input ||
+    ![1, 2].includes(input.version ?? 0) ||
+    !Array.isArray(input.semesters) ||
+    !Array.isArray(input.courses) ||
+    !Array.isArray(input.batches)
   )
     throw new Error('本地数据格式不兼容')
+  const s: AppState = {
+    version: 2,
+    semesters: input.semesters,
+    activeSemesterId: input.activeSemesterId ?? '',
+    courses: input.courses,
+    batches: input.batches,
+    events: Array.isArray(input.events) ? input.events : [],
+  }
   const validSemester = (v: Semester) =>
     v &&
     typeof v.id === 'string' &&
@@ -57,6 +67,19 @@ export function validateState(value: unknown): AppState {
     )
   )
     throw new Error('导入记录无效')
+  if (
+    !s.events.every(
+      (event: ScheduleEvent) =>
+        typeof event.id === 'string' &&
+        typeof event.title === 'string' &&
+        typeof event.date === 'string' &&
+        typeof event.startTime === 'string' &&
+        typeof event.endTime === 'string' &&
+        typeof event.color === 'string' &&
+        eventErrors(event).length === 0,
+    )
+  )
+    throw new Error('个人日程数据无效')
   return s
 }
 export function loadState(): AppState {

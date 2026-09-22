@@ -3,13 +3,17 @@ import {
   coursesOnDate,
   localDateTime,
   localISO,
-  meetingTime,
   nextClass,
   sections,
   weekForDate,
   weekdays,
 } from '../domain/calendar'
-import type { Course, Semester } from '../domain/types'
+import {
+  eventsOnDate,
+  minutesFromTime,
+  nextScheduleEvent,
+} from '../domain/events'
+import type { Course, ScheduleEvent, Semester } from '../domain/types'
 import {
   ActionButton,
   EmptyState,
@@ -17,25 +21,112 @@ import {
   StatusBadge,
 } from '../components/DesignSystem'
 
+type TodayItem =
+  | {
+      kind: 'course'
+      key: string
+      title: string
+      location: string
+      startTime: string
+      endTime: string
+      color: string
+      course: Course
+      sectionText: string
+      teacher?: string
+    }
+  | {
+      kind: 'event'
+      key: string
+      title: string
+      location: string
+      startTime: string
+      endTime: string
+      color: string
+      event: ScheduleEvent
+      notes?: string
+    }
+
 export function Home({
   semester,
   courses,
+  events,
   now,
   onImport,
-  onWeek,
+  onAgenda,
   onEdit,
+  onEditEvent,
 }: {
   semester: Semester
   courses: Course[]
+  events: ScheduleEvent[]
   now: Date
   onImport: () => void
-  onWeek: () => void
-  onEdit: (c: Course) => void
+  onAgenda: () => void
+  onEdit: (course: Course) => void
+  onEditEvent: (event: ScheduleEvent) => void
 }) {
   const today = localISO(now)
   const week = weekForDate(semester.startDate, today)
-  const list = coursesOnDate(courses, semester, today)
-  const next = nextClass(courses, semester, now)
+  const courseList = coursesOnDate(courses, semester, today)
+  const eventList = eventsOnDate(events, today)
+  const items: TodayItem[] = [
+    ...courseList.map(({ course, meeting }, index) => ({
+      kind: 'course' as const,
+      key: `course:${course.id}:${index}`,
+      title: course.name,
+      location: course.location || '教室待补充',
+      startTime: sections[meeting.startSection - 1][0],
+      endTime: sections[meeting.endSection - 1][1],
+      color: course.color,
+      course,
+      sectionText: `第 ${meeting.startSection}–${meeting.endSection} 节`,
+      teacher: course.teacher,
+    })),
+    ...eventList.map((event) => ({
+      kind: 'event' as const,
+      key: `event:${event.id}`,
+      title: event.title,
+      location: event.location || '个人日程',
+      startTime: event.startTime,
+      endTime: event.endTime,
+      color: event.color,
+      event,
+      notes: event.notes,
+    })),
+  ].sort(
+    (a, b) =>
+      minutesFromTime(a.startTime) - minutesFromTime(b.startTime) ||
+      a.kind.localeCompare(b.kind),
+  )
+
+  const nextCourse = nextClass(courses, semester, now)
+  const nextEvent = nextScheduleEvent(events, now)
+  const nextIsEvent =
+    nextEvent &&
+    (!nextCourse || nextEvent.start.getTime() < nextCourse.start.getTime())
+  const next = nextIsEvent
+    ? {
+        kind: 'event' as const,
+        title: nextEvent.event.title,
+        location: nextEvent.event.location || '个人日程',
+        startTime: nextEvent.event.startTime,
+        endTime: nextEvent.event.endTime,
+        start: nextEvent.start,
+        edit: () => onEditEvent(nextEvent.event),
+        meta: 'PERSONAL EVENT / 个人日程',
+      }
+    : nextCourse
+      ? {
+          kind: 'course' as const,
+          title: nextCourse.course.name,
+          location: nextCourse.course.location || '教室待补充',
+          startTime: sections[nextCourse.meeting.startSection - 1][0],
+          endTime: sections[nextCourse.meeting.endSection - 1][1],
+          start: nextCourse.start,
+          edit: () => onEdit(nextCourse.course),
+          meta: `COURSE / 第 ${nextCourse.meeting.startSection}–${nextCourse.meeting.endSection} 节`,
+        }
+      : null
   const minutes = next
     ? Math.ceil((next.start.getTime() - now.getTime()) / 60000)
     : 0
@@ -46,11 +137,12 @@ export function Home({
         ? `${Math.floor(minutes / 60)} 小时 ${minutes % 60} 分钟后`
         : `${Math.floor(minutes / 1440)} 天后`
   const inTerm = week >= 1 && week <= semester.totalWeeks
-  const current = list.find(({ meeting }) => {
-    const start = localDateTime(today, sections[meeting.startSection - 1][0])
-    const end = localDateTime(today, sections[meeting.endSection - 1][1])
-    return start <= now && end >= now
-  })
+  const current = items.find(
+    (item) =>
+      localDateTime(today, item.startTime) <= now &&
+      localDateTime(today, item.endTime) >= now,
+  )
+
   return (
     <>
       <div className="page-heading command-heading">
@@ -70,49 +162,46 @@ export function Home({
       </div>
       <div className="status-rail">
         <StatusBadge tone={current ? 'active' : 'success'}>
-          {current ? '课程进行中' : '系统待命'}
+          {current ? '安排进行中' : '系统待命'}
         </StatusBadge>
         <span>
           {inTerm ? `WEEK_${String(week).padStart(2, '0')}` : 'OUT_OF_TERM'}
         </span>
-        <span>LOCAL / {String(list.length).padStart(2, '0')} EVENTS</span>
+        <span>LOCAL / {String(items.length).padStart(2, '0')} ITEMS</span>
       </div>
       <section className="next-card">
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-serial" aria-hidden="true">
           NXT
           <br />
-          SESSION
+          ITEM
         </div>
         <div className="hero-label">
           <span className="pulse-dot" />
-          {next ? 'NEXT SESSION / 下一节课程' : 'SYSTEM IDLE / 暂无后续课程'}
+          {next ? `NEXT ITEM / ${next.meta}` : 'SYSTEM IDLE / 暂无后续安排'}
         </div>
         <div className="hero-time">
-          {next ? meetingTime(next.meeting) : '--:--'}
+          {next ? `${next.startTime}–${next.endTime}` : '--:--'}
         </div>
-        <h2>{next ? next.course.name : '时间留白'}</h2>
+        <h2>{next ? next.title : '时间留白'}</h2>
         <p>
           {next ? (
             <>
               <MapPin size={15} />
-              {next.course.location || '教室待补充'}
-              <span>·</span>第 {next.meeting.startSection}–
-              {next.meeting.endSection} 节
+              {next.location}
+              <span>·</span>
+              {next.kind === 'course' ? '课程' : '个人日程'}
             </>
           ) : (
-            '当前时间段未配置课程任务。'
+            '当前时间段未配置课程或个人日程。'
           )}
         </p>
         <div className="hero-bottom">
           <span className="hero-pill">
-            <Clock3 size={13} /> {next ? `T-${countdown}` : 'READY FOR IMPORT'}
+            <Clock3 size={13} /> {next ? `T-${countdown}` : 'READY FOR PLAN'}
           </span>
-          <button
-            onClick={next ? () => onEdit(next.course) : onImport}
-            className="hero-action"
-          >
-            {next ? '打开课程档案' : '接入课表数据'}
+          <button onClick={next ? next.edit : onAgenda} className="hero-action">
+            {next ? '打开安排档案' : '创建个人日程'}
             <ArrowRight size={18} />
           </button>
         </div>
@@ -120,80 +209,75 @@ export function Home({
       <div className="stats-row">
         <div>
           <span className="stat-value">
-            {String(list.length).padStart(2, '0')}
+            {String(items.length).padStart(2, '0')}
           </span>
-          <span>今日课程</span>
+          <span>今日安排</span>
         </div>
         <div>
           <span className="stat-value">
-            {String(
-              list.reduce(
-                (n, x) => n + x.meeting.endSection - x.meeting.startSection + 1,
-                0,
-              ),
-            ).padStart(2, '0')}
+            {String(courseList.length).padStart(2, '0')}
           </span>
-          <span>今日节数</span>
+          <span>课程</span>
         </div>
         <div>
           <span className="stat-value">
-            {inTerm
-              ? String(Math.max(0, semester.totalWeeks - week + 1)).padStart(
-                  2,
-                  '0',
-                )
-              : '—'}
+            {String(eventList.length).padStart(2, '0')}
           </span>
-          <span>剩余教学周</span>
+          <span>个人日程</span>
         </div>
       </div>
       <SectionHeader
         index="01"
         title="今日任务序列"
-        subtitle={`TODAY / ${String(list.length).padStart(2, '0')} EVENTS`}
+        subtitle={`TODAY / ${String(items.length).padStart(2, '0')} ITEMS`}
         action={
-          <button className="text-button" onClick={onWeek}>
-            打开周计划
+          <button className="text-button" onClick={onAgenda}>
+            打开日程轴
             <ArrowRight size={16} />
           </button>
         }
       />
-      {list.length ? (
+      {items.length ? (
         <div className="timeline">
-          {list.map(({ course, meeting }, i) => {
-            const ended =
-              localDateTime(today, sections[meeting.endSection - 1][1]) < now
+          {items.map((item) => {
+            const ended = localDateTime(today, item.endTime) < now
             const ongoing =
-              !ended &&
-              localDateTime(today, sections[meeting.startSection - 1][0]) <= now
+              !ended && localDateTime(today, item.startTime) <= now
             return (
               <button
-                key={`${course.id}-${i}`}
+                key={item.key}
                 className={`today-course ${ended ? 'ended' : ''}`}
-                onClick={() => onEdit(course)}
+                onClick={() =>
+                  item.kind === 'course'
+                    ? onEdit(item.course)
+                    : onEditEvent(item.event)
+                }
               >
                 <div className="timeline-time">
-                  <strong>{sections[meeting.startSection - 1][0]}</strong>
-                  <span>{sections[meeting.endSection - 1][1]}</span>
+                  <strong>{item.startTime}</strong>
+                  <span>{item.endTime}</span>
                 </div>
                 <div
                   className="today-course-body"
-                  style={{ borderLeftColor: course.color }}
+                  style={{ borderLeftColor: item.color }}
                 >
                   <div className="course-title-row">
-                    <h3>{course.name}</h3>
+                    <h3>{item.title}</h3>
+                    <span className="source-tag">
+                      {item.kind === 'course' ? '课程' : '日程'}
+                    </span>
                     {ongoing && (
                       <span className="tiny-tag">ACTIVE / 进行中</span>
                     )}
-                    {ended && <span className="muted">CLOSED / 已结束</span>}
                   </div>
                   <p>
                     <MapPin size={14} />
-                    {course.location || '教室待补充'}
+                    {item.location}
                   </p>
                   <small>
-                    第 {meeting.startSection}–{meeting.endSection} 节
-                    {course.teacher ? ` · ${course.teacher}` : ''}
+                    {item.kind === 'course'
+                      ? `${item.sectionText}${item.teacher ? ` · ${item.teacher}` : ''}`
+                      : item.notes || '个人时间块'}
                   </small>
                 </div>
               </button>
@@ -202,17 +286,17 @@ export function Home({
         </div>
       ) : (
         <EmptyState
-          title="今天没有课程安排"
+          title="今天没有课程或个人日程"
           description={
             <>
-              已导入的课程会自动出现在这里。
+              在日程时间轴点击任意空闲时段，即可创建安排。
               <br />
               有空的时候，也记得好好休息。
             </>
           }
           action={
-            <ActionButton variant="secondary" onClick={onWeek}>
-              查看周课表
+            <ActionButton variant="secondary" onClick={onAgenda}>
+              创建个人日程
             </ActionButton>
           }
         />
@@ -222,7 +306,7 @@ export function Home({
           <ScanLine size={23} />
         </div>
         <div>
-          <span className="terminal-label">IMPORT TERMINAL / 03</span>
+          <span className="terminal-label">IMPORT TERMINAL / 04</span>
           <strong>接入新的课表数据</strong>
           <span>上传样本 · 校对草稿 · 写入本地</span>
         </div>

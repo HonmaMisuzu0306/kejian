@@ -68,7 +68,7 @@ export function Settings({
           <span className="eyebrow">
             {initial
               ? '00 / TERMINAL SETUP · NEW SEMESTER'
-              : '04 / DEVICE CONFIG · LOCAL DATA'}
+              : '05 / DEVICE CONFIG · LOCAL DATA'}
           </span>
           <h1>{initial ? '初始化学期档案' : '终端配置'}</h1>
           <p>
@@ -195,7 +195,8 @@ export function Settings({
               <span className="tiny-tag">仅此设备</span>
             </div>
             <p className="muted">
-              保存了 {state.courses.length} 门课程和 {state.batches.length}{' '}
+              保存了 {state.courses.length} 门课程、{state.events.length}{' '}
+              条个人日程和 {state.batches.length}{' '}
               条导入记录。图片仅用于当前预览，不持久保存。
             </p>
             <p className="muted">

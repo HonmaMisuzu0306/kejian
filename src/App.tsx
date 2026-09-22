@@ -4,7 +4,9 @@ import { Home } from './pages/Home'
 import { Week } from './pages/Week'
 import { ImportPage } from './pages/Import'
 import { Settings } from './pages/Settings'
+import { Agenda } from './pages/Agenda'
 import { CourseEditor } from './components/CourseEditor'
+import { EventEditor } from './components/EventEditor'
 import {
   detectConflicts,
   importCourses,
@@ -13,7 +15,7 @@ import {
 } from './domain/courses'
 import { localISO, weekForDate } from './domain/calendar'
 import { loadState, saveState } from './services/storage'
-import type { AppState, Course, Semester } from './domain/types'
+import type { AppState, Course, ScheduleEvent, Semester } from './domain/types'
 import { AppShell, type PageId } from './components/AppShell'
 
 type Page = PageId
@@ -35,6 +37,7 @@ export default function App() {
     currentWeek(state.semesters.find((s) => s.id === state.activeSemesterId)),
   )
   const [editing, setEditing] = useState<Course | null>(null)
+  const [editingEvent, setEditingEvent] = useState<ScheduleEvent | null>(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const semester = state.semesters.find((s) => s.id === state.activeSemesterId)
@@ -84,6 +87,17 @@ export default function App() {
     persist(next)
     setEditing(null)
     setMessage('课程已保存')
+  }
+  function saveEvent(event: ScheduleEvent) {
+    const next = {
+      ...state,
+      events: state.events.some((item) => item.id === event.id)
+        ? state.events.map((item) => (item.id === event.id ? event : item))
+        : [...state.events, event],
+    }
+    persist(next)
+    setEditingEvent(null)
+    setMessage('个人日程已保存')
   }
   function handleImport(courses: Course[], names: string[]) {
     const result = importCourses(state, courses, names)
@@ -141,10 +155,23 @@ export default function App() {
             <Home
               semester={semester}
               courses={state.courses}
+              events={state.events}
               now={now}
               onImport={() => navigate('import')}
-              onWeek={() => navigate('week')}
+              onAgenda={() => navigate('agenda')}
               onEdit={setEditing}
+              onEditEvent={setEditingEvent}
+            />
+          )}
+          {page === 'agenda' && (
+            <Agenda
+              semester={semester}
+              courses={state.courses}
+              events={state.events}
+              initialDate={localISO(now)}
+              onAdd={(event) => setEditingEvent(event)}
+              onEditEvent={setEditingEvent}
+              onEditCourse={setEditing}
             />
           )}
           {page === 'week' && (
@@ -208,6 +235,32 @@ export default function App() {
                     })
                     setEditing(null)
                     setMessage('课程已删除')
+                  } catch (err) {
+                    setError((err as Error).message)
+                  }
+                }
+              : undefined
+          }
+        />
+      )}
+      {editingEvent && (
+        <EventEditor
+          key={editingEvent.id}
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onSave={saveEvent}
+          onDelete={
+            state.events.some((event) => event.id === editingEvent.id)
+              ? () => {
+                  try {
+                    persist({
+                      ...state,
+                      events: state.events.filter(
+                        (event) => event.id !== editingEvent.id,
+                      ),
+                    })
+                    setEditingEvent(null)
+                    setMessage('个人日程已删除')
                   } catch (err) {
                     setError((err as Error).message)
                   }

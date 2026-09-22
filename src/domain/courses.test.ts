@@ -16,11 +16,12 @@ const semester = {
   totalWeeks: 20,
 }
 const state = (): AppState => ({
-  version: 1,
+  version: 2,
   semesters: [semester],
   activeSemesterId: 's',
   courses: [],
   batches: [],
+  events: [],
 })
 const course = (weeks = [3], extra: Partial<Course> = {}): Course => ({
   ...newCourse('s'),

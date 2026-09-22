@@ -3,6 +3,7 @@ dist/
 test-results/
 playwright-report/
 coverage/
+artifacts/*.apk
 PROGRESS.md
 
 .env

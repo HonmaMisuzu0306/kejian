@@ -203,7 +203,7 @@ export function ImportPage({
     <>
       <div className="page-heading">
         <div>
-          <span className="eyebrow">03 / IMPORT TERMINAL · SOURCE INTAKE</span>
+          <span className="eyebrow">04 / IMPORT TERMINAL · SOURCE INTAKE</span>
           <h1>课表数据接入</h1>
           <p>上传样本、校对草稿，再写入本地终端。</p>
         </div>
