@@ -3,10 +3,6 @@ import type { Weekday } from '../../domain/types'
 export const NUIST_MOBILE_LAYOUT = {
   minAspectRatio: 0.38,
   maxAspectRatio: 0.58,
-  gridLeft: 0.107,
-  gridTop: 0.266,
-  columnWidth: 0.1276,
-  rowHeight: 0.0631,
   weekdays: 7,
   sections: 11,
 } as const
@@ -63,16 +59,23 @@ export function detectCourseBlocks(cells: CellColor[][]): CourseBlock[] {
 }
 
 const locationCorrections: [RegExp, string][] = [
-  [/[扩扫抗拟撇擅拓撕执摔][江浇]楼/gu, '揽江楼'],
+  [/[扩扫抗拟撇擅拓撕执摔搅][江浇]楼/gu, '揽江楼'],
   [/[糖车][护盘舫]楼/gu, '藕舫楼'],
   [/[演滨]江BS/gu, '滨江BS'],
   [/中苑篮球[声生]/gu, '中苑篮球场'],
+  [/中[茆范]篮球场/gu, '中苑篮球场'],
   [/蓝球场/gu, '篮球场'],
+  [/仄望楼/gu, '长望楼'],
+  [/长望楼5(?=\d{3})/gu, '长望楼S'],
+]
+
+const courseNameCorrections: [RegExp, string][] = [
+  [/面向对象程序设计实[跆践踐]/gu, '面向对象程序设计实践'],
 ]
 
 function clean(text: string) {
   return text
-    .replace(/[|丨]/gu, '')
+    .replace(/[|丨]/gu, 'I')
     .replace(/[“”'`]/gu, '')
     .replace(/\s+/gu, '')
     .replace(/[，。；;]+$/gu, '')
@@ -81,29 +84,45 @@ function clean(text: string) {
 export function parseRecognizedCourse(rawText: string): {
   name: string
   location?: string
+  remainder?: string
 } {
   let compact = clean(rawText)
   for (const [pattern, replacement] of locationCorrections)
     compact = compact.replace(pattern, replacement)
 
   const knownLocation = compact.match(
-    /(揽江楼|阅江楼|藕舫楼|滨江BS|中苑篮球场)[A-Z]?\d{0,3}(?:-\d{1,3})?/u,
+    /(揽江楼|阅江楼|藕舫楼|长望楼|临江楼|滨江BS|中苑篮球场)[A-Z]?\d{0,3}(?:-\d{1,3})?/u,
   )
   if (knownLocation?.index !== undefined) {
+    let name = compact.slice(0, knownLocation.index)
+    for (const [pattern, replacement] of courseNameCorrections)
+      name = name.replace(pattern, replacement)
     return {
-      name: compact.slice(0, knownLocation.index),
+      name,
       location: knownLocation[0],
+      ...(compact.slice(knownLocation.index + knownLocation[0].length)
+        ? {
+            remainder: compact.slice(
+              knownLocation.index + knownLocation[0].length,
+            ),
+          }
+        : {}),
     }
   }
 
   const genericMarker = compact.search(/[楼馆室场]/u)
   if (genericMarker >= 0) {
     const locationStart = Math.max(0, genericMarker - 2)
+    let name = compact.slice(0, locationStart)
+    for (const [pattern, replacement] of courseNameCorrections)
+      name = name.replace(pattern, replacement)
     return {
-      name: compact.slice(0, locationStart),
+      name,
       location: compact.slice(locationStart),
     }
   }
+  for (const [pattern, replacement] of courseNameCorrections)
+    compact = compact.replace(pattern, replacement)
   return { name: compact }
 }
 

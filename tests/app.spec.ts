@@ -17,15 +17,54 @@ async function tab(page: Page, name: string) {
     .getByRole('button', { name, exact: true })
     .click()
 }
-async function generate(page: Page, week = 3) {
+async function generate(page: Page, week = 3, image = screenshot) {
   await tab(page, '导入')
-  await page.getByTestId('screenshot-input').setInputFiles(screenshot)
+  await page.getByTestId('screenshot-input').setInputFiles(image)
   await page.getByRole('spinbutton', { name: '截图1周次' }).fill(String(week))
   await page.getByRole('button', { name: '开始本地识别' }).click()
   await expect(page.getByRole('heading', { name: '识别草稿' })).toBeVisible({
     timeout: 120_000,
   })
 }
+
+test('浅色中文课表识别出正确课程名、教室和罗马数字，离线仍可扫描', async ({
+  page,
+  context,
+}) => {
+  await setup(page)
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
+  await page.reload()
+  await expect
+    .poll(() =>
+      page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
+    )
+    .toBe(true)
+  await context.setOffline(true)
+  await generate(
+    page,
+    3,
+    path.join(
+      process.cwd(),
+      'tests',
+      '.generated',
+      'nuist-synthetic-no-grid.png',
+    ),
+  )
+  await expect(page.locator('.draft-card')).toHaveCount(3)
+  for (const [name, location] of [
+    ['线性代数', '揽江楼C303'],
+    ['计算机网络', '揽江楼C401'],
+    ['大学物理II', '阅江楼222'],
+  ]) {
+    const card = page.locator('.draft-card').filter({ hasText: name })
+    await expect(card).toHaveCount(1)
+    await expect(card).toContainText(location)
+  }
+  await page.getByText('查看原图与识别提示').click()
+  await expect(page.getByText(/网格线较浅/)).toBeVisible()
+})
 
 test('390px 截图导入、增删改、保存、刷新、重复导入及撤销完整流程', async ({
   page,

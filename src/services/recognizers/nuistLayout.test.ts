@@ -50,4 +50,33 @@ describe('南信大移动课表版式', () => {
     expect(isSupportedNuistScreenshot(2400, 1080)).toBe(false)
     expect(isSupportedNuistScreenshot(390, 844)).toBe(false)
   })
+
+  it('不丢弃罗马数字或教室后的额外文字', () => {
+    expect(parseRecognizedCourse('大学物理实验||\n藕舫楼208-210')).toEqual({
+      name: '大学物理实验II',
+      location: '藕舫楼208-210',
+    })
+    expect(parseRecognizedCourse('学术英语(1)\n滨江BS211\n日语(一)')).toEqual({
+      name: '学术英语(1)',
+      location: '滨江BS211',
+      remainder: '日语(一)',
+    })
+    expect(parseRecognizedCourse('马克思主义基本原理\n搅江楼N205')).toEqual({
+      name: '马克思主义基本原理',
+      location: '揽江楼N205',
+    })
+    expect(parseRecognizedCourse('面向对象程序设计\n长望楼5202')).toEqual({
+      name: '面向对象程序设计',
+      location: '长望楼S202',
+    })
+    expect(parseRecognizedCourse('体育(3)\n中茆篮球场\n篮球')).toEqual({
+      name: '体育(3)',
+      location: '中苑篮球场',
+      remainder: '篮球',
+    })
+    expect(parseRecognizedCourse('面向对象程序设计实跆\n长望楼S402')).toEqual({
+      name: '面向对象程序设计实践',
+      location: '长望楼S402',
+    })
+  })
 })

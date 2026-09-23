@@ -242,7 +242,7 @@ export function ImportPage({
           <div className="notice demo-notice">
             <ScanLine size={21} />
             <div>
-              <strong>V1.0.1 · 实验性本地识别</strong>
+              <strong>V1.0.1 修复版 · 实验性本地识别</strong>
               <p>
                 当前适配南信大移动教务系统的竖屏周课表。图片只在本机处理，中文小字仍可能识别错误，请逐项校对。
               </p>

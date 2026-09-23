@@ -3,6 +3,7 @@ dist/
 test-results/
 tests/.generated/
 public/ocr/
+参考课表截图/
 playwright-report/
 coverage/
 artifacts/*.apk

@@ -38,7 +38,7 @@ npm run preview -- --port 4173 --strictPort
 
 ## Android APK
 
-项目已经接入 Capacitor 8，Android 应用标识为 `com.honmamisuzu.kejian`，支持 Android 7.0（API 24）及以上版本。正式签名 APK 可从 [GitHub Releases](https://github.com/HonmaMisuzu0306/kejian/releases) 下载。`v1.0.0` 是首个正式版，`v1.0.1` 是包含本地截图扫描的实验性预发布。
+项目已经接入 Capacitor 8，Android 应用标识为 `com.honmamisuzu.kejian`，支持 Android 7.0（API 24）及以上版本。正式签名 APK 可从 [GitHub Releases](https://github.com/HonmaMisuzu0306/kejian/releases) 下载。`v1.0.0` 是首个正式版，`v1.0.1` 是包含本地截图扫描的实验性预发布，`v1.0.1-ocrfix.2` 是根据真实课表截图改进网格定位和文字识别的实验性修复版。
 
 在本机生成调试测试包：
 
@@ -57,7 +57,7 @@ npm run android:apk
 
 1. 首次设置学期名称、第一周周一日期和总周数。默认日期 `2026-08-31` 根据参考截图推算，应按学校校历核实。
 2. 在“导入”选择南信大移动教务系统的完整竖屏周课表截图；支持 PNG、JPG 或 WebP，每张不超过 15 MB，每批最多 12 张。
-3. 为每张图片确认学期、周次，启动本地 OCR 并生成实验识别草稿。需要时可展开“查看原图与识别提示”。首次识别会加载随应用打包的约 14 MB 离线资源，手机处理可能需要数十秒。
+3. 为每张图片确认学期、周次，启动本地 OCR 并生成实验识别草稿。需要时可展开“查看原图与识别提示”。文字识别修复版使用完整中文模型，并针对同一学期 18 张真实截图验证动态网格、深色选中列、三节连堂和相邻同色课程；首次识别会加载随应用打包的约 54 MiB 离线资源，手机处理可能需要数十秒。截图始终只在本机处理。
 4. 编辑、添加或删除课程，核对教室、教师、节次和周次。周次支持 `1,3,5-8`，不会推断未提供截图的周。
 5. 时间冲突会提示；需要明确勾选保留重叠安排才允许导入。
 6. 确认导入后查看周课表，点击课程可继续修改；左右滑动或点击箭头切换教学周。
@@ -149,8 +149,10 @@ npm run test:e2e
 
 ## 当前截图识别实现
 
-识别器保持 `TimetableImageRecognizer` 接口，输入为 `File + semesterId + weekNumber`，输出课程草稿和警告。南信大适配器先按固定网格检测七个星期列与 11 节课，合并同色连续课程块，再使用 Tesseract.js 简体中文模型逐块识别课程名和教室。
+识别器保持 `TimetableImageRecognizer` 接口，输入为 `File + semesterId + weekNumber`，输出课程草稿和警告。南信大适配器优先从截图实际网格线定位七个星期列与 11 节课；网格线较浅时使用已校准的完整周视图比例回退，并提示用户重点核对节次。课程块按色彩和可见分隔线划分，再进行背景颜色差分、文字增强与完整中文模型识别。OCR 输出中的罗马数字使用对应字形的实际竖向笔画校验；教室后的额外文字会提示用户核对，不静默丢弃。
 
-OCR worker、三种兼容核心和中文语言文件由 `scripts/sync-ocr-assets.mjs` 从锁定的 npm 依赖复制进构建，PWA Service Worker 和 APK 均包含这些文件，不需要远程 CDN。逐条保留低置信度和缺失字段警告，继续使用现有人工校对流程；周次必须由用户确认。
+OCR worker、三种兼容核心和中文语言文件由 `scripts/sync-ocr-assets.mjs` 从锁定的 npm 依赖复制进构建。修复版使用 `@tesseract.js-data/chi_sim/4.0.0` 的完整模型（约 42.3 MiB），替换原来的 `4.0.0_best_int` 压缩模型；模型 URL 和缓存键独立，升级后不会误用旧模型。PWA Service Worker 和 APK 均包含这些文件，不需要远程 CDN。逐条保留低置信度和缺失字段警告，继续使用现有人工校对流程；周次必须由用户确认。
+
+真实截图内容级回归：先运行 `npm run dev -- --port 4174 --strictPort`，另开终端设置 `TIMETABLE_SCREENSHOT` 为最初的南信大参考截图路径，然后运行 `node scripts/benchmark-ocr.mjs`。设置 `OCR_COMPARE_BASELINE=1` 可与已发布 `v1.0.1` 的原识别器对比（本地需有该标签）。结果写入被 Git 忽略的 `test-results/ocr-accuracy.json`，逐项核对课程名、教室与节次；不会将用户原图加入仓库。此脚本的预期文字专属于该参考截图，不能直接作为其他课表的准确率测量。浏览器自动化另使用不含用户数据的浅色中文合成课表，验证未出现在原图中的课程名和断网扫描。
 
 后续新增学校时，应在 `src/services/recognizers/` 增加版式适配器，共用 OCR 和现有校对流程。若未来选择远程识别，应在上传前明确告知用户并取得同意，服务端保管密钥，不能将密钥打包进前端；V1.0.1 没有调用外部识别服务。
